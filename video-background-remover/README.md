@@ -10,6 +10,7 @@ The Video Background Remover project aims to provide a solution for real-time mo
 - User-friendly GUI for easy interaction.
 
 ## Project Structure
+Will be modified/updated in future...
 ```
 video-background-remover
 ├── src
@@ -31,16 +32,25 @@ video-background-remover
 ## Installation
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/video-background-remover.git
+   git clone https://github.com/BotsianLio/GhostStream.git
    ```
 2. Navigate to the project directory:
    ```
    cd video-background-remover
    ```
-3. Install the required dependencies:
+3. Create the virtual environment named 'GhostStream'
    ```
-   pip install -r requirements.txt
+   python3 -m venv GhostStream
    ```
+4. Activate the environment
+   ```
+   source GhostStream/bin/activate
+   ```
+5. Install the required libraries directly
+   ```
+   pip install opencv-python PyQt5 numpy
+   ```
+
 
 ## Usage
 1. Run the application:
@@ -51,7 +61,7 @@ video-background-remover
 3. The processed video will display in the application window with moving objects removed.
 
 ## Contributing
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
+
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for more details.
