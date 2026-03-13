@@ -14,15 +14,31 @@ class MotionEstimator:
         self.prev_kp = None
         self.prev_des = None
 
-    def calculate_camera_motion(self, curr_frame):
+    def calculate_camera_motion(self, curr_frame, foreground_mask=None):
         """
         Calculates the Homography Matrix (H) aligning Previous Frame -> Current Frame.
+        Accepts an optional foreground_mask to ignore the moving subject.
         """
         # 1. Convert to Grayscale
         curr_gray = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
         
-        # 2. Detect Features
-        kp, des = self.orb.detectAndCompute(curr_gray, None)
+        # --- NEW MASK LOGIC START ---
+        background_mask = None
+        if foreground_mask is not None:
+            # Ensure mask is a single channel 8-bit image (required by cv2)
+            if len(foreground_mask.shape) == 3:
+                foreground_mask = cv2.cvtColor(foreground_mask, cv2.COLOR_BGR2GRAY)
+            
+            # Threshold to be safe: ensure foreground is 255 (white) and rest is 0
+            _, binary_mask = cv2.threshold(foreground_mask, 127, 255, cv2.THRESH_BINARY)
+            
+            # Invert: We want background to be 255 (white) so ORB looks there,
+            # and foreground object to be 0 (black) so ORB ignores it completely.
+            background_mask = cv2.bitwise_not(binary_mask)
+        # --- NEW MASK LOGIC END ---
+
+        # 2. Detect Features (NOW USING THE MASK)
+        kp, des = self.orb.detectAndCompute(curr_gray, mask=background_mask)
 
         # First frame check
         if self.prev_gray is None:
@@ -32,7 +48,8 @@ class MotionEstimator:
             return np.eye(3) # No movement
 
         # 3. Match Features
-        if des is None or self.prev_des is None:
+        # Safety check: if ORB found no features (e.g., staring at a blank wall)
+        if des is None or self.prev_des is None or len(des) == 0 or len(self.prev_des) == 0:
             return np.eye(3)
 
         matches = self.bf.match(self.prev_des, des)
