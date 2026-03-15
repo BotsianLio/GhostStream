@@ -9,10 +9,10 @@ from capture.worker import VideoWorker
 from gui.selector import CameraSelector
 from framesource.type import FrameSourceType
 
-class AppWindow(QMainWindow):
-    def __init__(self, camera_index):
+class VideoWindow(QMainWindow):
+    def __init__(self, frame_source):
         super().__init__()
-        self.current_camera_index = camera_index
+        self.current_frame_source = frame_source
         self.worker = None
 
         self.setWindowTitle("GhostStream - Realtime Inpainting")
@@ -23,7 +23,7 @@ class AppWindow(QMainWindow):
         self.layout = QVBoxLayout(self.central_widget)
 
         # --- 1. Top Options Bar ---
-        self.btn_reselect = QPushButton("Switch Camera")
+        self.btn_reselect = QPushButton("Switch Video")
         self.btn_reselect.setFixedWidth(150)
         self.btn_reselect.clicked.connect(self.open_reselect_dialog)
         self.layout.addWidget(self.btn_reselect, alignment=Qt.AlignCenter)
@@ -35,15 +35,15 @@ class AppWindow(QMainWindow):
         self.layout.addWidget(self.video_label, stretch=1)
 
         # Start the Background Thread
-        self.start_worker(camera_index)
+        self.start_worker(frame_source)
 
-    def start_worker(self, index):
+    def start_worker(self, frame_source):
         # Stop existing worker if running
         if self.worker is not None:
             self.worker.stop()
 
         # Create and start new worker
-        self.worker = VideoWorker(index, FrameSourceType.CAMERA)
+        self.worker = VideoWorker(frame_source, FrameSourceType.VIDEO)
         self.worker.frame_processed.connect(self.update_display)
         self.worker.start()
 
@@ -73,11 +73,11 @@ class AppWindow(QMainWindow):
         if selector.exec_() == QDialog.Accepted:
             new_index = selector.selected_index
             print(f"Switching to Camera Index: {new_index}")
-            self.current_camera_index = new_index
+            self.current_frame_source = new_index
             self.start_worker(new_index)
         else:
             # Resume old camera if cancelled
-            self.start_worker(self.current_camera_index)
+            self.start_worker(self.current_frame_source)
 
     def closeEvent(self, event):
         if self.worker:

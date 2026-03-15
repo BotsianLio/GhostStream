@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel, QFileDialog
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
@@ -12,6 +12,9 @@ class CameraSelector(QDialog):
         
         self.selected_index = None
         self.cap = None
+
+        self.rval = None
+        self.filepath = None
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -35,8 +38,14 @@ class CameraSelector(QDialog):
         self.btn_confirm = QPushButton("Use This Camera")
         self.btn_confirm.clicked.connect(self.confirm_selection)
         controls.addWidget(self.btn_confirm)
-
+        
         layout.addLayout(controls)
+        
+        # 3. Add Open Video Button
+        self.open_video_btn = QPushButton("Open Video")
+        self.open_video_btn.clicked.connect(self.openFile)
+        layout.addWidget(self.open_video_btn)
+        
 
         # 3. Timer for updating the preview frame
         self.timer = QTimer()
@@ -105,6 +114,8 @@ class CameraSelector(QDialog):
     def confirm_selection(self):
         self.selected_index = self.combo.currentData()
         # Release resource so Main Window can pick it up
+        print("STARTING HERE")
+        self.rval = "Camera"
         if self.cap:
             self.cap.release()
         self.accept()
@@ -113,3 +124,19 @@ class CameraSelector(QDialog):
         if self.cap:
             self.cap.release()
         event.accept()
+
+    def openFile(self):
+        filename, _ = QFileDialog.getOpenFileName(
+            self, 
+            "Open File", 
+            "/home", 
+            "Video files (*.mp4)"
+        )
+
+        if filename != "":
+            self.filepath = filename
+            self.rval = "Video"
+            if self.cap:
+                self.cap.release()
+            self.accept()
+        
