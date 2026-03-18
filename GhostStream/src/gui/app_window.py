@@ -1,5 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QDialog
+from PyQt5.QtWidgets import (QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, 
+                             QWidget, QPushButton, QDialog, QFileDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
@@ -21,11 +22,22 @@ class AppWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
 
-        # --- 1. Top Options Bar ---
+        # --- 1. Top Options Bar (UPDATED) ---
+        # We use a horizontal layout (QHBoxLayout) so the buttons sit next to each other
+        self.top_bar_layout = QHBoxLayout()
+        
         self.btn_reselect = QPushButton("Switch Camera")
         self.btn_reselect.setFixedWidth(150)
         self.btn_reselect.clicked.connect(self.open_reselect_dialog)
-        self.layout.addWidget(self.btn_reselect, alignment=Qt.AlignCenter)
+        self.top_bar_layout.addWidget(self.btn_reselect, alignment=Qt.AlignRight)
+
+        self.btn_load_video = QPushButton("Load Video File")
+        self.btn_load_video.setFixedWidth(150)
+        self.btn_load_video.clicked.connect(self.load_video_file)
+        self.top_bar_layout.addWidget(self.btn_load_video, alignment=Qt.AlignLeft)
+
+        # CRITICAL: This line actually puts the buttons onto the screen
+        self.layout.addLayout(self.top_bar_layout)
 
         # --- 2. Video Display ---
         self.video_label = QLabel("Initializing AI Pipeline...", self)
@@ -76,6 +88,29 @@ class AppWindow(QMainWindow):
             self.start_worker(new_index)
         else:
             # Resume old camera if cancelled
+            self.start_worker(self.current_camera_index)
+
+    # --- 3. NEW VIDEO LOADER LOGIC ---
+    def load_video_file(self):
+        # Pause the live camera while the user is picking a file
+        if self.worker:
+            self.worker.stop()
+
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, 
+            "Select Video File", 
+            "", 
+            "Video Files (*.mp4 *.avi *.mov);;All Files (*)", 
+            options=options
+        )
+        
+        if file_path:
+            print(f"Switching to Video File: {file_path}")
+            self.current_camera_index = file_path # Save the string path
+            self.start_worker(file_path) # Send the string path to the worker
+        else:
+            # If they cancel the file picker, resume the camera
             self.start_worker(self.current_camera_index)
 
     def closeEvent(self, event):
