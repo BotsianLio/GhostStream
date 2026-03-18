@@ -13,6 +13,10 @@ class VideoWorker(QThread):
         self.running = True
         self.pipeline = None
 
+    def set_estimation_method(self, method_name):
+        if self.pipeline is not None:
+            self.pipeline.set_estimation_method(method_name)
+
     def run(self):
         self.pipeline = VideoPipeline()
         
