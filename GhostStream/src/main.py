@@ -9,7 +9,8 @@ def main():
     
     # 1. Launch Selector First
     selector = CameraSelector()
-    
+    selector.show()
+    sys.exit(app.exec_())
     if selector.exec_() == QDialog.Accepted:
         if selector.rval == "Camera": # TODO CHANGE THIS TO ENUM
             selected_index = selector.selected_index
