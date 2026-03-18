@@ -22,22 +22,30 @@ class VideoWorker(QThread):
         # Open Camera
         cap = cv2.VideoCapture(self.frame_source)
         
+        if self.frame_source_type == FrameSourceType.VIDEO:
+            processed_frames = np.empty((0, 360, 1920, 3), dtype=np.uint8)
+        index = 0
         while self.running:
             ret, frame = cap.read()
             if not ret: break
 
             # Pass to Pipeline (YOLO + Motion)
-            result_frame = None
-            if self.frame_source_type == FrameSourceType.CAMERA:
-                result_frame = self.pipeline.process(frame)
-            elif self.frame_source_type == FrameSourceType.VIDEO:
-                result_frame = self.pipeline.process(frame)
+            result_frame = self.pipeline.process(frame)
 
             # Send result to GUI
             if result_frame is not None and self.frame_source_type == FrameSourceType.CAMERA:
                 self.frame_processed.emit(result_frame)
             elif result_frame is not None and self.frame_source_type == FrameSourceType.VIDEO:
-                self.frame_processed.emit(result_frame)
+                print(f"FRAME {index} PROCESSED")
+                index += 1
+                result_frame = result_frame.reshape((1, 360, 1920, 3))
+                print(processed_frames.shape)
+                print(result_frame.shape)
+                processed_frames = np.append(processed_frames, result_frame, axis=0)
+
+        if self.frame_source_type == FrameSourceType.VIDEO and processed_frames.size != 0:
+            print("DONE, EMITTING FRAMES")
+            self.frame_processed.emit(processed_frames)
         cap.release()
 
     def stop(self):

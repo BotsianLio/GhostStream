@@ -48,10 +48,23 @@ class CameraSelector(QMainWindow):
         layout.addLayout(controls)
         
         # 3. Add Open Video Button
+        #layout.addStretch()
+
+        layout2 = QHBoxLayout()
+        layout.addLayout(layout2)
+
         self.open_video_btn = QPushButton("Open Video")
         self.open_video_btn.clicked.connect(self.openFile)
-        layout.addWidget(self.open_video_btn)
         
+        self.frame_rate_label = QLabel("Video Max Frame Rate:")
+        self.frame_rate_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        self.frame_rate_input = QComboBox()
+        self.frame_rate_input.addItems(['Default', '10', '20', '30', '40', '50', '60'])
+        
+        layout2.addWidget(self.open_video_btn)
+        layout2.addWidget(self.frame_rate_label)
+        layout2.addWidget(self.frame_rate_input)
 
         # 3. Timer for updating the preview frame
         self.timer = QTimer()
@@ -155,7 +168,7 @@ class CameraSelector(QMainWindow):
         )
 
         if filename != "":
-            new_dialog = VideoWindow(filename)
+            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText())
             new_dialog.closed_signal.connect(self.closeDialogEvent)
             self.dialogs.append(new_dialog)
             new_dialog.show()
