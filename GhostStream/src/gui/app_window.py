@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QMainWindow, QLabel, QVBoxLayout, QHBoxLayout,
                              QWidget, QPushButton, QDialog, QFileDialog)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QComboBox
 import cv2
 
 # Import your new Worker and Selector
@@ -35,6 +36,12 @@ class AppWindow(QMainWindow):
         self.btn_load_video.setFixedWidth(150)
         self.btn_load_video.clicked.connect(self.load_video_file)
         self.top_bar_layout.addWidget(self.btn_load_video, alignment=Qt.AlignLeft)
+
+        self.combo_method = QComboBox()
+        self.combo_method.addItems(["RANSAC", "MAGSAC++"])
+        self.combo_method.setFixedWidth(150)
+        self.combo_method.currentTextChanged.connect(self.change_algorithm)
+        self.top_bar_layout.addWidget(self.combo_method, alignment=Qt.AlignLeft)
 
         # CRITICAL: This line actually puts the buttons onto the screen
         self.layout.addLayout(self.top_bar_layout)
@@ -117,3 +124,8 @@ class AppWindow(QMainWindow):
         if self.worker:
             self.worker.stop()
         event.accept()
+
+    def change_algorithm(self, method_name):
+        print(f"GUI: Switching algorithm to {method_name}")
+        if self.worker:
+            self.worker.set_estimation_method(method_name)
