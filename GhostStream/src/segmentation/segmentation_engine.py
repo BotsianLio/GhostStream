@@ -9,7 +9,7 @@ class SegmentationEngine:
         self.device = 'mps' if torch.backends.mps.is_available() else 'cpu'
         self.model = YOLO(model_path)
         self.model.to(self.device)
-        self.target_classes = [0] # 0 is 'person' in COCO
+        self.target_classes = [0, 2] # 0 is 'person' in COCO
 
     def get_mask(self, frame):
         # imgsz=320 makes it MUCH faster on M1
