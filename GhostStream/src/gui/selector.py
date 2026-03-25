@@ -5,7 +5,7 @@ import cv2
 import platform
 from gui.app_window import AppWindow
 from gui.video_window import VideoWindow
-from framesource.type import FrameSourceType
+from ghoststreamenums import FrameSourceType
 
 class CameraSelector(QMainWindow):
     def __init__(self):
@@ -60,7 +60,7 @@ class CameraSelector(QMainWindow):
         self.frame_rate_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.frame_rate_input = QComboBox()
-        self.frame_rate_input.addItems(['Default', '10', '20', '30', '40', '50', '60'])
+        self.frame_rate_input.addItems(['Default', 'Live'])
         
         layout2.addWidget(self.open_video_btn)
         layout2.addWidget(self.frame_rate_label)
