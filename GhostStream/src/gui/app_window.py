@@ -8,14 +8,15 @@ import cv2
 
 # Import your new Worker and Selector
 from capture.worker import VideoWorker
-from framesource.type import FrameSourceType
+from ghoststreamenums import FrameSourceType
 
 class AppWindow(QDialog):
     closed_signal = pyqtSignal(FrameSourceType, int, QDialog)
 
-    def __init__(self, camera_index):
+    def __init__(self, camera_index, method):
         super().__init__()
         self.camera_index = camera_index
+        self.method = method
         self.worker = None
 
         self.setWindowTitle("GhostStream - Realtime Inpainting")
@@ -40,6 +41,7 @@ class AppWindow(QDialog):
 
         # Create and start new worker
         self.worker = VideoWorker(self.camera_index, FrameSourceType.CAMERA)
+        self.worker.set_estimation_method(self.method)
         self.worker.frame_processed.connect(self.update_display)
         self.worker.start()
 

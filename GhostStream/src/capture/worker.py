@@ -10,7 +10,6 @@ class VideoWorker(QThread):
 
     def __init__(self, frame_source, frame_source_type): # <--- CHANGED: Accept 'source' (int or str)
         super().__init__()
-        super().__init__()
         self.frame_source = frame_source
         self.frame_source_type = frame_source_type
         self.running = True
@@ -22,6 +21,7 @@ class VideoWorker(QThread):
 
     def run(self):
         self.pipeline = VideoPipeline()
+        self.pipeline.set_estimation_method(method_name)
         
         # OpenCV magic: If source is 0, it opens webcam. If source is "video.mp4", it opens the file.
         cap = cv2.VideoCapture(self.frame_source) 

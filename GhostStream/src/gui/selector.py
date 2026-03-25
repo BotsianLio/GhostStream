@@ -66,6 +66,11 @@ class CameraSelector(QMainWindow):
         layout2.addWidget(self.frame_rate_label)
         layout2.addWidget(self.frame_rate_input)
 
+        self.combo_method = QComboBox()
+        self.combo_method.addItems(["RANSAC", "MAGSAC++"])
+        self.combo_method.setFixedWidth(150)
+        controls.addWidget(self.combo_method, alignment=Qt.AlignLeft)
+
         # 3. Timer for updating the preview frame
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_preview)
@@ -139,7 +144,7 @@ class CameraSelector(QMainWindow):
         # Release resource so Main Window can pick it up
         if self.cap:
             self.cap.release()
-        new_dialog = AppWindow(selected_index)
+        new_dialog = AppWindow(selected_index, self.combo_method.currentText())
         new_dialog.closed_signal.connect(self.closeDialogEvent)
         self.dialogs.append(new_dialog)
         new_dialog.show()
@@ -168,7 +173,7 @@ class CameraSelector(QMainWindow):
         )
 
         if filename != "":
-            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText())
+            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText(), self.combo_method.currentText())
             new_dialog.closed_signal.connect(self.closeDialogEvent)
             self.dialogs.append(new_dialog)
             new_dialog.show()

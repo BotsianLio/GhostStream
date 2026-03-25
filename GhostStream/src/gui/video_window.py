@@ -11,10 +11,11 @@ from framesource.type import FrameSourceType
 class VideoWindow(QDialog):
     closed_signal = pyqtSignal(FrameSourceType, str, QDialog)
 
-    def __init__(self, frame_source, frame_rate):
+    def __init__(self, frame_source, frame_rate, method):
         super().__init__()
         self.frame_source = frame_source
         self.frame_rate = frame_rate
+        self.method = method
         self.worker = None
         self.processed_images = []
         self.index = 0
@@ -54,6 +55,7 @@ class VideoWindow(QDialog):
         elif self.frame_rate.isnumeric():
             self.worker = VideoWorker(self.frame_source, FrameSourceType.VIDEO)
             self.worker.frame_processed.connect(self.processFrames)
+        self.worker.set_estimation_method(self.method)
         self.worker.start()
 
     def processFrames(self, frames):
