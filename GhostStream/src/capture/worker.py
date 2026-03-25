@@ -3,13 +3,16 @@ import cv2
 import numpy as np
 import time
 from processing.pipeline import VideoPipeline
+from framesource.type import FrameSourceType
 
 class VideoWorker(QThread):
     frame_processed = pyqtSignal(np.ndarray)
 
-    def __init__(self, source): # <--- CHANGED: Accept 'source' (int or str)
+    def __init__(self, frame_source, frame_source_type): # <--- CHANGED: Accept 'source' (int or str)
         super().__init__()
-        self.source = source
+        super().__init__()
+        self.frame_source = frame_source
+        self.frame_source_type = frame_source_type
         self.running = True
         self.pipeline = None
 
@@ -21,12 +24,15 @@ class VideoWorker(QThread):
         self.pipeline = VideoPipeline()
         
         # OpenCV magic: If source is 0, it opens webcam. If source is "video.mp4", it opens the file.
-        cap = cv2.VideoCapture(self.source) 
+        cap = cv2.VideoCapture(self.frame_source) 
         
         # Get the original video's FPS so we don't play it in fast-forward
         fps = cap.get(cv2.CAP_PROP_FPS)
         delay = 1 / fps if fps > 0 else 0.033 # Default to ~30fps if unknown
         
+        if self.frame_source_type == FrameSourceType.VIDEO:
+            processed_frames = np.empty((0, 360, 1920, 3), dtype=np.uint8)
+        index = 0
         while self.running:
             start_time = time.time()
             
@@ -37,18 +43,24 @@ class VideoWorker(QThread):
 
             result_frame = self.pipeline.process(frame)
 
-            if result_frame is not None:
+            # Send result to GUI
+            if result_frame is not None and self.frame_source_type == FrameSourceType.CAMERA:
                 self.frame_processed.emit(result_frame)
-                
-            # --- CRITICAL FIX FOR VIDEO FILES ---
-            # Webcams naturally wait for the next frame. Video files do not!
-            # Without this delay, your M1 chip will process an mp4 at 200+ FPS 
-            # and it will look like it's in extreme fast-forward.
-            elapsed = time.time() - start_time
-            sleep_time = delay - elapsed
-            if sleep_time > 0 and isinstance(self.source, str):
-                time.sleep(sleep_time)
+                elapsed = time.time() - start_time
+                sleep_time = delay - elapsed
+                if sleep_time > 0 and isinstance(self.source, str):
+                  time.sleep(sleep_time)
+            elif result_frame is not None and self.frame_source_type == FrameSourceType.VIDEO:
+                print(f"FRAME {index} PROCESSED")
+                index += 1
+                result_frame = result_frame.reshape((1, 360, 1920, 3))
+                print(processed_frames.shape)
+                print(result_frame.shape)
+                processed_frames = np.append(processed_frames, result_frame, axis=0)
 
+        if self.frame_source_type == FrameSourceType.VIDEO and processed_frames.size != 0:
+            print("DONE, EMITTING FRAMES")
+            self.frame_processed.emit(processed_frames)
         cap.release()
 
     def stop(self):
