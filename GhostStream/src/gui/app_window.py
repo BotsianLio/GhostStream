@@ -1,7 +1,9 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QDialog
+from PyQt5.QtWidgets import (QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, 
+                             QWidget, QPushButton, QDialog, QFileDialog)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QComboBox
 import cv2
 
 # Import your new Worker and Selector

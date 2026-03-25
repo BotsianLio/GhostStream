@@ -10,6 +10,9 @@ class VideoPipeline:
         self.motion = MotionEstimator()
         self.background_model = BackgroundModel()
 
+    def set_estimation_method(self, method_name):
+        self.motion.set_method(method_name)
+        
     def process(self, frame):
         if frame is None: return None
         
