@@ -11,11 +11,12 @@ from ghoststreamenums import FrameSourceType
 class VideoWindow(QDialog):
     closed_signal = pyqtSignal(FrameSourceType, str, QDialog)
 
-    def __init__(self, frame_source, setting, method):
+    def __init__(self, frame_source, setting, method,frame_skip):
         super().__init__()
         self.frame_source = frame_source
         self.setting = setting
         self.method = method
+        self.frame_skip = frame_skip
         self.worker = None
         self.processed_images = []
         self.index = 0
@@ -50,10 +51,10 @@ class VideoWindow(QDialog):
         # Create and start new worker
         if self.setting == "Live":
             # If default treat like a camera display and update display when frames are processed
-            self.worker = VideoWorker(self.frame_source, FrameSourceType.CAMERA)
+            self.worker = VideoWorker(self.frame_source, FrameSourceType.CAMERA,self.frame_skip)
             self.worker.frame_processed.connect(self.updateDisplay)
         elif self.setting == "Default":
-            self.worker = VideoWorker(self.frame_source, FrameSourceType.VIDEO)
+            self.worker = VideoWorker(self.frame_source, FrameSourceType.VIDEO,self.frame_skip)
             self.worker.video_processed.connect(self.processFrames)
         self.worker.set_estimation_method(self.method)
         self.worker.start()

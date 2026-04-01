@@ -13,10 +13,11 @@ from ghoststreamenums import FrameSourceType
 class AppWindow(QDialog):
     closed_signal = pyqtSignal(FrameSourceType, int, QDialog)
 
-    def __init__(self, camera_index, method):
+    def __init__(self, camera_index, method,frame_skip):
         super().__init__()
         self.camera_index = camera_index
         self.method = method
+        self.frame_skip = frame_skip
         self.worker = None
 
         self.setWindowTitle("GhostStream - Realtime Inpainting")
@@ -40,7 +41,7 @@ class AppWindow(QDialog):
             self.worker.stop()
 
         # Create and start new worker
-        self.worker = VideoWorker(self.camera_index, FrameSourceType.CAMERA)
+        self.worker = VideoWorker(self.camera_index, FrameSourceType.CAMERA,self.frame_skip)
         self.worker.set_estimation_method(self.method)
         self.worker.frame_processed.connect(self.update_display)
         self.worker.start()

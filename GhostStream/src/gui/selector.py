@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel, QFileDialog, QMainWindow, QWidget
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel, QFileDialog, QMainWindow, QWidget,QSpinBox
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
@@ -70,6 +70,17 @@ class CameraSelector(QMainWindow):
         self.combo_method.addItems(["RANSAC", "MAGSAC++"])
         self.combo_method.setFixedWidth(150)
         controls.addWidget(self.combo_method, alignment=Qt.AlignLeft)
+
+        self.frame_skip_label = QLabel("Frame Skip:")
+        self.frame_skip_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        self.frame_skip_input = QSpinBox()
+        self.frame_skip_input.setMinimum(1)
+        self.frame_skip_input.setMaximum(20)
+        self.frame_skip_input.setValue(1)
+
+        layout2.addWidget(self.frame_skip_label)
+        layout2.addWidget(self.frame_skip_input)
 
         # 3. Timer for updating the preview frame
         self.timer = QTimer()
@@ -144,7 +155,7 @@ class CameraSelector(QMainWindow):
         # Release resource so Main Window can pick it up
         if self.cap:
             self.cap.release()
-        new_dialog = AppWindow(selected_index, self.combo_method.currentText())
+        new_dialog = AppWindow(selected_index, self.combo_method.currentText(),self.frame_skip_input.value())
         new_dialog.closed_signal.connect(self.closeDialogEvent)
         self.dialogs.append(new_dialog)
         new_dialog.show()
@@ -173,7 +184,7 @@ class CameraSelector(QMainWindow):
         )
 
         if filename != "":
-            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText(), self.combo_method.currentText())
+            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText(), self.combo_method.currentText(),self.frame_skip_input.value())
             new_dialog.closed_signal.connect(self.closeDialogEvent)
             self.dialogs.append(new_dialog)
             new_dialog.show()

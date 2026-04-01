@@ -9,10 +9,11 @@ class VideoWorker(QThread):
     frame_processed = pyqtSignal(np.ndarray)
     video_processed = pyqtSignal(np.ndarray, float)
 
-    def __init__(self, frame_source, frame_source_type): # <--- CHANGED: Accept 'source' (int or str)
+    def __init__(self, frame_source, frame_source_type,frame_skip=1): # <--- CHANGED: Accept 'source' (int or str)
         super().__init__()
         self.frame_source = frame_source
         self.frame_source_type = frame_source_type
+        self.frame_skip = max(1, int(frame_skip))
         self.running = True
         self.pipeline = None
 
@@ -39,7 +40,9 @@ class VideoWorker(QThread):
             # If a video file finishes, stop the loop
             if not ret: 
                 break
-
+            if index % self.frame_skip != 0:
+                index += 1
+                continue
             result_frame = self.pipeline.process(frame)
 
             # Send result to GUI
@@ -47,9 +50,9 @@ class VideoWorker(QThread):
                 self.frame_processed.emit(result_frame)
             elif result_frame is not None and self.frame_source_type == FrameSourceType.VIDEO:
                 print(f"FRAME {index} PROCESSED")
-                index += 1
                 result_frame = result_frame.reshape((1, 360, 1920, 3))
                 processed_frames = np.append(processed_frames, result_frame, axis=0)
+            index += 1
 
         if self.frame_source_type == FrameSourceType.VIDEO and processed_frames.size != 0:
             print("DONE, EMITTING FRAMES")
