@@ -10,23 +10,20 @@ class VideoPipeline:
         self.motion = MotionEstimator()
         self.background_model = BackgroundModel()
 
+    def set_estimation_method(self, method_name):
+        self.motion.set_method(method_name)
+        
     def process(self, frame):
         if frame is None: return None
         
         working_frame = cv2.resize(frame, (640, 360))
 
-        # 1. Mask
         mask, debug_yolo = self.segmentation.get_mask(working_frame)
 
-        # 2. Motion
         H = self.motion.calculate_camera_motion(working_frame)
 
-        # 3. Background Update
-        # NOW RETURNS TWO IMAGES: The Result + The Memory
         final_result, internal_memory = self.background_model.update(working_frame, mask, H)
 
-        # 4. Create the "Debug Strip"
-        # We stack 3 images horizontally
         if internal_memory is None:
             internal_memory = np.zeros_like(working_frame)
             
