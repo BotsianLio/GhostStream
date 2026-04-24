@@ -1,10 +1,13 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox, QLabel, QFileDialog, QMainWindow, QWidget
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap
 import cv2
 import platform
+from gui.app_window import AppWindow
+from gui.video_window import VideoWindow
+from ghoststreamenums import FrameSourceType
 
-class CameraSelector(QDialog):
+class CameraSelector(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Select Camera Source")
@@ -13,19 +16,23 @@ class CameraSelector(QDialog):
         self.selected_index = None
         self.cap = None
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        self.filepath = None
 
-        # 1. Video Preview Area
+        self.dialogs = []
+
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        layout = QVBoxLayout()
+        self.central_widget.setLayout(layout)
+
         self.video_label = QLabel("Loading Camera Preview...", self)
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setStyleSheet("background-color: #000; color: #FFF; border: 1px solid #555;")
         self.video_label.setMinimumHeight(300)
-        # Ensure it expands to fill space
+
         self.video_label.setSizePolicy(self.video_label.sizePolicy().Expanding, self.video_label.sizePolicy().Expanding)
         layout.addWidget(self.video_label)
 
-        # 2. Controls Area
         controls = QHBoxLayout()
         
         self.combo = QComboBox()
@@ -35,14 +42,34 @@ class CameraSelector(QDialog):
         self.btn_confirm = QPushButton("Use This Camera")
         self.btn_confirm.clicked.connect(self.confirm_selection)
         controls.addWidget(self.btn_confirm)
-
+        
         layout.addLayout(controls)
+        
 
-        # 3. Timer for updating the preview frame
+        layout2 = QHBoxLayout()
+        layout.addLayout(layout2)
+
+        self.open_video_btn = QPushButton("Open Video")
+        self.open_video_btn.clicked.connect(self.openFile)
+        
+        self.frame_rate_label = QLabel("Video Max Frame Rate:")
+        self.frame_rate_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        self.frame_rate_input = QComboBox()
+        self.frame_rate_input.addItems(['Default', 'Live'])
+        
+        layout2.addWidget(self.open_video_btn)
+        layout2.addWidget(self.frame_rate_label)
+        layout2.addWidget(self.frame_rate_input)
+
+        self.combo_method = QComboBox()
+        self.combo_method.addItems(["RANSAC", "MAGSAC++"])
+        self.combo_method.setFixedWidth(150)
+        controls.addWidget(self.combo_method, alignment=Qt.AlignLeft)
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_preview)
 
-        # 4. Initial Scan
         self.scan_cameras()
 
     def scan_cameras(self):
@@ -51,18 +78,20 @@ class CameraSelector(QDialog):
         
         backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_ANY
 
-        # Quickly check indices 0-9 to see which are valid
+        active_cap = []
         for i in range(5):
             cap = cv2.VideoCapture(i, backend)
             if cap.isOpened():
                 ret, _ = cap.read()
                 if ret:
                     self.combo.addItem(f"Camera Index {i}", i)
-                cap.release()
+                active_cap.append(cap)
+
+        for cap in active_cap:
+            cap.release()
 
         self.combo.blockSignals(False)
         
-        # Determine initial selection
         if self.combo.count() > 0:
             self.change_camera_preview()
         else:
@@ -79,6 +108,7 @@ class CameraSelector(QDialog):
         if index is not None:
             backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_ANY
             self.cap = cv2.VideoCapture(index, backend)
+            ret, frame = self.cap.read()
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
             
@@ -103,13 +133,39 @@ class CameraSelector(QDialog):
                 self.video_label.setPixmap(pix)
 
     def confirm_selection(self):
-        self.selected_index = self.combo.currentData()
+        selected_index = self.combo.currentData()
         # Release resource so Main Window can pick it up
         if self.cap:
             self.cap.release()
-        self.accept()
+        new_dialog = AppWindow(selected_index, self.combo_method.currentText())
+        new_dialog.closed_signal.connect(self.closeDialogEvent)
+        self.dialogs.append(new_dialog)
+        new_dialog.show()
+    
+    def closeDialogEvent(self, frame_source_type, frame_source, dialog):
+        index = self.combo.currentData()
+        if frame_source_type == FrameSourceType.CAMERA and index == frame_source:
+            self.change_camera_preview()
+        self.dialogs.remove(dialog)
 
     def closeEvent(self, event):
-        if self.cap:
+        for dialog in self.dialogs:
+            dialog.close()
+        if self.cap and self.cap.isOpened():
             self.cap.release()
         event.accept()
+
+    def openFile(self):
+        filename, _ = QFileDialog.getOpenFileName(
+            self, 
+            "Open File", 
+            "/home", 
+            "Video files (*.mp4)"
+        )
+
+        if filename != "":
+            new_dialog = VideoWindow(filename, self.frame_rate_input.currentText(), self.combo_method.currentText())
+            new_dialog.closed_signal.connect(self.closeDialogEvent)
+            self.dialogs.append(new_dialog)
+            new_dialog.show()
+        
