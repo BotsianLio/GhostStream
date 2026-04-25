@@ -72,7 +72,7 @@ def run_real_world_benchmark(test_video, clean_video, motion_method="MAGSAC++"):
     print("="*40)
 
 if __name__ == "__main__":
-    TEST_VIDEO = "walking_0.mp4"
-    CLEAN_VIDEO = "clean_0.mp4"
+    TEST_VIDEO = "walking_0.mp4" #original testing video
+    CLEAN_VIDEO = "clean_0.mp4" #original clean video without designated foregraound objects
     
     run_real_world_benchmark(TEST_VIDEO, CLEAN_VIDEO, motion_method="MAGSAC++")
